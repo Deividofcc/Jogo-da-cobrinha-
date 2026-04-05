@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cobrinha Suprema</title>
+
+<style>
+body {
+    margin:0;
+    font-family:Arial;
+    background:#111;
+    color:white;
+    text-align:center;
+}
+
+#menu { margin-top:20px; }
+
+button {
+    margin:5px;
+    padding:10px;
+    font-size:18px;
+    border-radius:10px;
+}
+
+canvas {
+    background:black;
+    margin-top:10px;
+}
+
+#gameArea { display:none; }
+
+.controls {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+.middle { display:flex; }
+
+#gameOver {
+    display:none;
+    position:fixed;
+    top:40%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:#222;
+    padding:20px;
+    border-radius:15px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- MENU -->
+<div id="menu">
+    <h2>🐍 Cobrinha Suprema</h2>
+
+    <p>🏆 Recorde: <span id="record">0</span></p>
+
+    <p>🎯 Dificuldade</p>
+    <button onclick="setDifficulty(150)">Fácil</button>
+    <button onclick="setDifficulty(100)">Médio</button>
+    <button onclick="setDifficulty(70)">Difícil</button>
+    <button onclick="setDifficulty(40)">Impossível 💀</button>
+
+    <p>🎨 Cor da cobra</p>
+    <input type="color" id="snakeColor" value="#00ff00">
+
+    <p>🎮 Modo</p>
+    <button onclick="startGame('player')">Jogador</button>
+    <button onclick="startGame('ai')">IA 🤖</button>
+</div>
+
+<!-- JOGO -->
+<div id="gameArea">
+    <p id="score">Pontuação: 0</p>
+
+    <canvas id="game" width="300" height="300"></canvas>
+
+    <button onclick="exitGame()">⬅️ Sair</button>
+
+    <div id="controls" class="controls">
+        <button onclick="move('up')">⬆️</button>
+        <div class="middle">
+            <button onclick="move('left')">⬅️</button>
+            <button onclick="move('down')">⬇️</button>
+            <button onclick="move('right')">➡️</button>
+        </div>
+    </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameOver">
+    <h2>GAME OVER 💀</h2>
+    <button onclick="restart()">Reiniciar</button>
+    <button onclick="exitGame()">Sair</button>
+</div>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+let snake,dx,dy,fruit,score,mode,color;
+let started=false;
+let speed=100;
+
+// recorde
+let record=localStorage.getItem("record") || 0;
+document.getElementById("record").innerText=record;
+
+// dificuldade
+function setDifficulty(s){
+    speed=s;
+}
+
+// iniciar
+function startGame(m){
+    mode=m;
+    color=document.getElementById("snakeColor").value;
+
+    document.getElementById("menu").style.display="none";
+    document.getElementById("gameArea").style.display="block";
+
+    snake=[{x:150,y:150}];
+    dx=15; dy=0;
+    fruit={x:90,y:90};
+    score=0;
+    started=true;
+
+    loop();
+}
+
+// loop
+function loop(){
+    if(!started)return;
+
+    setTimeout(()=>{
+        requestAnimationFrame(loop);
+
+        ctx.clearRect(0,0,300,300);
+
+        if(mode==="ai") aiMove();
+
+        let head={x:snake[0].x+dx,y:snake[0].y+dy};
+
+        if(head.x<0||head.y<0||head.x>=300||head.y>=300){
+            gameOver(); return;
+        }
+
+        snake.unshift(head);
+
+        if(head.x===fruit.x && head.y===fruit.y){
+            score++;
+            fruit.x=Math.floor(Math.random()*20)*15;
+            fruit.y=Math.floor(Math.random()*20)*15;
+        } else {
+            snake.pop();
+        }
+
+        document.getElementById("score").innerText="Pontuação: "+score;
+
+        ctx.fillStyle="red";
+        ctx.fillRect(fruit.x,fruit.y,15,15);
+
+        ctx.fillStyle=color;
+        snake.forEach(p=>ctx.fillRect(p.x,p.y,15,15));
+
+    },speed);
+}
+
+// IA
+function aiMove(){
+    let h=snake[0];
+
+    if(h.x < fruit.x) move("right");
+    else if(h.x > fruit.x) move("left");
+    else if(h.y < fruit.y) move("down");
+    else if(h.y > fruit.y) move("up");
+}
+
+// movimento
+function move(d){
+    if(d==="left"&&dx===0){dx=-15;dy=0;}
+    if(d==="right"&&dx===0){dx=15;dy=0;}
+    if(d==="up"&&dy===0){dx=0;dy=-15;}
+    if(d==="down"&&dy===0){dx=0;dy=15;}
+}
+
+// game over
+function gameOver(){
+    started=false;
+
+    if(score>record){
+        localStorage.setItem("record",score);
+    }
+
+    document.getElementById("gameOver").style.display="block";
+}
+
+// sair
+function exitGame(){ location.reload(); }
+
+// reiniciar
+function restart(){ location.reload(); }
+</script>
+
+</body>
+</html>
